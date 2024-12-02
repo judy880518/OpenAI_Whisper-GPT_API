@@ -4,12 +4,11 @@
 
 架構 (Architecture)
 系統組件 (Diagram or description of the system's components):
-
 主要組件:
-Gradio 前端: 提供使用者互動介面，用於音訊上傳和結果顯示。
-FastAPI 後端: 提供 API 支持，包括音訊處理和資料傳輸。
-Whisper 模型: 用於多語言音訊轉錄（由 OpenAI 提供）。
-GPT API: 用於根據轉錄內容產生摘要或執行其他語言處理任務。
+1. Gradio 前端: 提供使用者互動介面，用於音訊上傳和結果顯示。
+2. FastAPI 後端: 提供 API 支持，包括音訊處理和資料傳輸。
+3. Whisper 模型: 用於多語言音訊轉錄（由 OpenAI 提供）。
+4. GPT API: 用於根據轉錄內容產生摘要或執行其他語言處理任務。
 
 系統架構圖
 +----------------+          +----------------+
@@ -24,6 +23,8 @@ GPT API: 用於根據轉錄內容產生摘要或執行其他語言處理任務�
 | 3. Display     | HTTP Resp|                |
 |    Results     |          |                |
 +----------------+          +----------------+
+![image](https://github.com/user-attachments/assets/8e1e1c0b-ee6a-4bfc-be45-b4c51c907b1f)
+
 
 工作流程 (Workflow)
 端對端流程解釋 (Explain the end-to-end process):
