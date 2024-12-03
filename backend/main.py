@@ -7,47 +7,73 @@ import uuid
 app = FastAPI()
 
 # 初始化 Whisper 模型
-whisper_model = whisper.load_model("base")
+try:
+    whisper_model = whisper.load_model("base")
+    print("Whisper model loaded successfully.")
+except Exception as e:
+    print(f"Error loading Whisper model: {e}")
+    raise RuntimeError("Failed to load Whisper model.")
 
 # 設置 OpenAI API Key
-openai.api_key = "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"
+openai.api_key = ""  # 使用你的有效 OpenAI API Key
 
 # 輸出目錄
 output_dir = "outputs"
 os.makedirs(output_dir, exist_ok=True)
 
-
 @app.post("/process/audio")
 async def process_audio(file: UploadFile = File(...)):
 
-    allowed_types = ["audio/wav", "audio/mpeg"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}. Allowed types are: {allowed_types}")
     try:
         # 保存上傳的文件到本地
         file_path = os.path.join(output_dir, f"{uuid.uuid4()}_{file.filename}")
         with open(file_path, "wb") as f:
             f.write(await file.read())
+        print(f"File saved to: {file_path}")
 
         # 使用 Whisper 進行轉錄
-        print("Starting transcription...")
+        print("Starting transcription with Whisper...")
         result = whisper_model.transcribe(file_path)
         transcript = result.get("text", "No transcription available")
+        if not transcript.strip():
+            raise ValueError("Transcription result is empty.")
+
+        # 限制摘要輸入長度，避免超出 GPT 模型限制
+        max_input_length = 3000
+        if len(transcript) > max_input_length:
+            transcript = transcript[:max_input_length] + "..."
 
         # 使用 OpenAI GPT 進行摘要
-        openai.api_key = "your_openai_api_key"
-        print("Starting summarization...")
+        print("Starting summarization with OpenAI GPT...")
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": f"Summarize the following text:\n{transcript}"}
             ],
-            max_tokens=100
+            max_tokens=100  # 調整 max_tokens 以控制輸出摘要長度
         )
         summary = response["choices"][0]["message"]["content"]
+        print("Summarization completed successfully.")
 
         # 返回轉錄和摘要結果
         return {"transcript": transcript, "summary": summary}
+
+    except openai.error.InvalidRequestError as e:
+        print(f"OpenAI API error: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"OpenAI API error: {str(e)}"
+        )
+    except ValueError as ve:
+        print(f"Transcription error: {ve}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Transcription error: {str(ve)}"
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing audio: {str(e)}")
+        print(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing audio: {str(e)}"
+        )
