@@ -1,10 +1,12 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 import whisper
 import openai
 import os
 import uuid
 import aiofiles
+import wave
+import asyncio
 
 app = FastAPI()
 
@@ -23,6 +25,43 @@ openai.api_key = ""  # 在此填入你的 OpenAI API Key
 output_dir = "outputs"
 os.makedirs(output_dir, exist_ok=True)
 
+# 暫存會議錄音文件和即時轉錄結果
+meetings = {}
+
+@app.websocket("/realtime/meeting/{meeting_id}")
+async def realtime_meeting(websocket: WebSocket, meeting_id: str):
+    """
+    接收即時語音流，並進行邊錄製邊處理。
+    """
+    await websocket.accept()
+    meeting_file_path = os.path.join(output_dir, f"{meeting_id}.wav")
+    meetings[meeting_id] = wave.open(meeting_file_path, 'wb')
+    meetings[meeting_id].setnchannels(1)  # 單聲道
+    meetings[meeting_id].setsampwidth(2)  # 每個樣本 2 字節 (16 位)
+    meetings[meeting_id].setframerate(16000)  # 16 kHz 頻率
+
+    transcript = ""  # 累積轉錄內容
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            meetings[meeting_id].writeframes(data)
+
+            # 即時轉錄
+            partial_transcription = whisper_model.transcribe(data, fp16=False)
+            partial_text = partial_transcription.get("text", "").strip()
+            if partial_text:
+                transcript += partial_text
+                await websocket.send_text(f"Partial Transcription: {partial_text}")
+    except WebSocketDisconnect:
+        print(f"Meeting {meeting_id} ended.")
+        meetings[meeting_id].close()
+        del meetings[meeting_id]
+
+        # 保存最終轉錄內容
+        result_filename = os.path.join(output_dir, f"{meeting_id}_transcript.txt")
+        async with aiofiles.open(result_filename, "w") as f:
+            await f.write(transcript)
+        print(f"Final transcription saved for meeting {meeting_id}.")
 
 @app.post("/process/audio")
 async def process_audio(file: UploadFile = File(...), language: str = Form(None)):
