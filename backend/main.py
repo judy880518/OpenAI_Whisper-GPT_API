@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 import whisper
 import openai
 import os
@@ -23,7 +23,9 @@ output_dir = "outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 @app.post("/process/audio")
-async def process_audio(file: UploadFile = File(...)):
+async def process_audio(file: UploadFile = File(...),
+                        language: str = Form(None)
+                        ):
 
     try:
          # 獨立的文件名，避免並發冲突
@@ -42,7 +44,7 @@ async def process_audio(file: UploadFile = File(...)):
 
         # 使用 Whisper 進行轉錄
         print("Starting transcription with Whisper...")
-        result = whisper_model.transcribe(file_path)
+        result = whisper_model.transcribe(file_path, language=language)
         transcript = result.get("text", "No transcription available")
         if not transcript.strip():
             raise ValueError("Transcription result is empty.")
@@ -59,7 +61,7 @@ async def process_audio(file: UploadFile = File(...)):
             lambda: openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "system", "content": "You are a helpful assistant for {language or 'multi-language'} transcription."},
                     {"role": "user", "content": f"Summarize the following text:\n{transcript}"}
                 ],
                 max_tokens=100  # 調整 max_tokens 控制摘要長度
