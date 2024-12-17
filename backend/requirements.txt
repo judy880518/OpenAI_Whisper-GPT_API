@@ -1,0 +1,7 @@
+#version
+fastapi
+uvicorn
+python-dotenv
+aiofiles
+whisper
+openai
