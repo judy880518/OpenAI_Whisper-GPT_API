@@ -48,6 +48,11 @@ async def process_audio(file: UploadFile = File(...),
         transcript = result.get("text", "No transcription available")
         if not transcript.strip():
             raise ValueError("Transcription result is empty.")
+        
+         # 檢測空白音訊或無有效轉錄內容
+        if not transcript.strip():
+            raise ValueError("The uploaded audio contains no discernible content or is silent.")
+
 
         # 限制摘要輸入長度，避免超出 GPT 模型限制
         max_input_length = 3000
