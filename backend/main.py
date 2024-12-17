@@ -3,6 +3,7 @@ import whisper
 import openai
 import os
 import uuid
+import aiofiles
 
 app = FastAPI()
 
@@ -25,11 +26,19 @@ os.makedirs(output_dir, exist_ok=True)
 async def process_audio(file: UploadFile = File(...)):
 
     try:
+         # 獨立的文件名，避免並發冲突
+        unique_id = uuid.uuid4()
+        file_path = os.path.join(output_dir, f"{unique_id}_{file.filename}")
+
         # 保存上傳的文件到本地
         file_path = os.path.join(output_dir, f"{uuid.uuid4()}_{file.filename}")
-        with open(file_path, "wb") as f:
-            f.write(await file.read())
-        print(f"File saved to: {file_path}")
+        #with open(file_path, "wb") as f:
+        #    f.write(await file.read())
+        #print(f"File saved to: {file_path}")
+        async with aiofiles.open(file_path, "wb") as f:
+            content = await file.read()
+            await f.write(content)
+        print(f"File saved: {file_path}")
 
         # 使用 Whisper 進行轉錄
         print("Starting transcription with Whisper...")
@@ -45,13 +54,16 @@ async def process_audio(file: UploadFile = File(...)):
 
         # 使用 OpenAI GPT 進行摘要
         print("Starting summarization with OpenAI GPT...")
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": f"Summarize the following text:\n{transcript}"}
-            ],
-            max_tokens=100  # 調整 max_tokens 以控制輸出摘要長度
+        response = await loop.run_in_executor(
+            None,
+            lambda: openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": f"Summarize the following text:\n{transcript}"}
+                ],
+                max_tokens=100  # 調整 max_tokens 控制摘要長度
+            )
         )
         summary = response["choices"][0]["message"]["content"]
         print("Summarization completed successfully.")
