@@ -1,7 +1,10 @@
 from openai import ChatCompletion
+from backend.config import OPENAI_API_KEY
 import whisper
-from config import OPENAI_API_KEY
+import os
 import aiofiles
+
+
 
 whisper_model = whisper.load_model("base")
 
@@ -20,6 +23,7 @@ async def process_audio_file(file_path, language, unique_id):
         # 使用 OpenAI 生成摘要
         response = ChatCompletion.create(
             model="gpt-3.5-turbo",
+            api_key=OPENAI_API_KEY,
             messages=[
                 {"role": "system", "content": "Summarize the following transcription."},
                 {"role": "user", "content": f"{transcript}"}
@@ -30,9 +34,11 @@ async def process_audio_file(file_path, language, unique_id):
         summary = response["choices"][0]["message"]["content"]
 
         output_filename = f"{unique_id}_result.txt"
-        output_filepath = f"{OUTPUT_DIR}/{output_filename}"
+        #output_filepath = f"{OUTPUT_DIR}/{output_filename}"    1226 Louis
+        output_filepath = f"{output_filename}"
 
-        async with aiofiles.open(output_filepath, "w") as f:
+        #async with aiofiles.open(output_filepath, "w") as f:
+        async with aiofiles.open(output_filepath, "w", encoding="utf-8") as f:
             await f.write("Transcription:\n")
             await f.write(transcript + "\n\n")
             await f.write("Summary:\n")
