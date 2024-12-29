@@ -1,7 +1,9 @@
-fastapi
+fastapi == 0.115.6
 uvicorn
-gradio
-openai
-whisper
-pydantic
-python-multipart
+gradio ==5.9.1
+openai == 0.28.1
+whisper == 20240930
+pydantic == 2.10.3
+python-multipart == 0.0.20
+aiofiles == 23.2.1
+numpy == 2.0.2
