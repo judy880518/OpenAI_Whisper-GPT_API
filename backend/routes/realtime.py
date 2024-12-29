@@ -1,6 +1,8 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from services.realtime_service import handle_realtime_transcription
-from config import OUTPUT_DIR
+#from services.realtime_service import handle_realtime_transcription
+from backend.services.realtime_service import handle_realtime_transcription
+#from config import OUTPUT_DIR
+from backend.config import OUTPUT_DIR
 import os
 
 router = APIRouter()
