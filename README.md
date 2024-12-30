@@ -24,7 +24,12 @@
 設定說明:
 1. 可使用Source tree clone 檔案下載到本地端。
 2. Clone完成後使用Visual Studio Code 開啟專案資料夾。
-3. 需要安裝使用的相關環境，資料夾裡有個requirements.txt的檔案，透過cmd 進到資料夾的路徑後須先安裝虛擬環境指令為 :python -m venv venv，並開啟虛擬環境 : .\venv\Scripts\activate，再安裝Requirements.txt內寫入有使用到的相關 指令為 : pip install -r requirements.txt
+3. 需要安裝使用的相關環境，資料夾裡有個requirements.txt的檔案，透過cmd 進到資料夾的路徑後須先安裝虛擬環境。
+指令為 :
+```bash
+python -m venv venv
+```
+並開啟虛擬環境 : .\venv\Scripts\activate，再安裝Requirements.txt內寫入有使用到的相關 指令為 : pip install -r requirements.txt
 4. 下載後先需進入後端 打開 cmd 進到資料夾的路徑後，直接開啟虛擬環境(前面有安裝過就無需再安裝) .\venv\Scripts\activate，輸入指令 : uvicorn backend.main:app --host 127.0.0.1 --port 8000
    確認有出現下面這幾行 就算連線成功
    INFO:     Started server process [27616]
